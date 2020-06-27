@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+  pqsl:
+    image: postgres:12.3-alpine
+    container_name: 'postgres'
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4:4.18
+    container_name: 'pgadmin'
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@google.com
+      PGADMIN_DEFAULT_PASSWORD: secret
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - "8081:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    links:
+      - "pqsl:pgsql-server"
+
+  prometheus:
+    build: './prometheus'
+    container_name: 'prometheus'
+    ports:
+      - '8082:9090'
+
+  node_exporter:
+    image: 'quay.io/prometheus/node-exporter'
+    container_name: 'node_exporter'
+
+  grafana:
+    build: './grafana'
+    container_name: 'grafana'
+    ports:
+      - '8083:3000'
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana-provisioning/:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
